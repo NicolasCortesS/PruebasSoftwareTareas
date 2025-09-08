@@ -1,5 +1,5 @@
-from interface.entities import ResponseLogin
-from interface.auth import AUTH
+from entities import ResponseLogin
+from auth import AUTH
 
 # ---------- Opciones ----------
 start_options = {

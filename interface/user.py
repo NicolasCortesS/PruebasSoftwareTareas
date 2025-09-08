@@ -18,17 +18,19 @@ class UserManager:
         1: {"name": "Gestionar eventos", "action": "manage_events"},
         2: {"name": "Generar reportes", "action": "generate_reports"},
         0: {"name": "Cerrar sesión", "action": "logout"},
+        4: {"name": "Salir", "action": "exit"}
     }
 
     admin_options = {
         1: {"name": "Gestionar eventos", "action": "manage_events"},
         2: {"name": "Gestionar ventas y devoluciones", "action": "manage_sales"},
         3: {"name": "Generar reportes", "action": "generate_reports"},
-        0: {"name": "Cerrar sesión", "action": "logout"},
+        4: {"name": "Cerrar sesión", "action": "logout"},
+        0: {"name": "Salir", "action": "exit"}
     }
 
     _userData: UserData = None
-
+    
     def __init__(self):
         pass
 
@@ -58,11 +60,9 @@ class UserManager:
                 self._sales_menu()
             case 'generate_reports':
                 self._print_report()
-            case 'manage_users':
-                print("Gestionando usuarios...")
             case 'logout':
                 print("Cerrando sesión...")
-                return {"logged_out": True}
+                return True
             case 'exit':
                 print("Saliendo de la aplicación...")
                 exit(0)
@@ -81,7 +81,7 @@ class UserManager:
                 print("Gestionando usuarios...")
             case 'logout':
                 print("Cerrando sesión...")
-                return {"logged_out": True}
+                return True
             case 'exit':
                 print("Saliendo de la aplicación...")
                 exit(0)
@@ -106,7 +106,7 @@ class UserManager:
                     res = self._admin_select(action)
                 else:
                     res = self._user_select(action)
-                if isinstance(res, dict) and res.get("logged_out"):
+                if res is True:
                     return
             else:
                 print("Opción no válida.")

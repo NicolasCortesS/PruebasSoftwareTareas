@@ -24,4 +24,3 @@ class UserData(BaseModel):
     id: int
     username: str
     role: str
-    id: int

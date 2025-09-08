@@ -1,11 +1,8 @@
 import bcrypt
-import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 from db import get_conn
 from logger import log_user_operation, log_event_operation, log_sale_operation
-
-logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 # ---------- Usuarios ----------
 def create_user(username: str, password: str, role: str = "admin") -> int:
@@ -116,6 +113,7 @@ def update_event(event_id: int, **fields) -> None:
     with get_conn() as c, c.cursor() as cur:
         cur.execute(f"UPDATE events SET {sets}, updated_at=now() WHERE id=%s", vals)
         log_event_operation(event_id, "UPDATE", f"fields={list(fields.keys())}")
+
 def delete_event(event_id: int) -> None:
     """
     Elimina un evento del sistema.
@@ -146,10 +144,10 @@ def sell(event_id: int, qty: int, user_id: int) -> None:
     """
     if qty <= 0: raise ValueError("Cantidad debe ser > 0")
     with get_conn() as c, c.cursor() as cur:
-        cur.execute("SELECT name, seats_total, seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
+        cur.execute("SELECT seats_total, seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
         row = cur.fetchone()
         if not row: raise ValueError("Evento no existe")
-        name, total, sold = row
+        total, sold = row
         available = total - sold
         if available < qty: raise ValueError("No hay cupos suficientes")
         cur.execute("UPDATE events SET seats_sold = seats_sold + %s, updated_at=now() WHERE id=%s", (qty, event_id))
@@ -171,10 +169,10 @@ def refund(event_id: int, qty: int, user_id: int) -> None:
     """
     if qty <= 0: raise ValueError("Cantidad debe ser > 0")
     with get_conn() as c, c.cursor() as cur:
-        cur.execute("SELECT name, seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
+        cur.execute("SELECT seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
         row = cur.fetchone()
         if not row: raise ValueError("Evento no existe")
-        name, sold = row
+        sold = row[0]
         if sold - qty < 0: raise ValueError("No se puede devolver más de lo vendido")
         cur.execute("UPDATE events SET seats_sold = seats_sold - %s, updated_at=now() WHERE id=%s", (qty, event_id))
         cur.execute("INSERT INTO movements(event_id,type,qty,user_id) VALUES(%s,'REFUND',%s,%s)",
@@ -209,7 +207,7 @@ def list_events(q: str = "", category: str = "", status: str = "", dt_from: date
         clauses += ["starts_at < NOW()"]
 
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
-    sql = f"SELECT id,name,description,starts_at,category,price,seats_total,seats_sold FROM events{where} ORDER BY starts_at"
+    sql = f"SELECT id,name,starts_at,category,price,seats_total,seats_sold FROM events{where} ORDER BY starts_at"
     with get_conn() as c, c.cursor() as cur:
         cur.execute(sql, params)
         rows = cur.fetchall()

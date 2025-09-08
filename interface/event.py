@@ -12,7 +12,7 @@ from domain import sell as d_sell
 
 # ---------- UI ----------
 class EventManager:
-    event_viewer_options = {
+    event_user_options = {
         1: {"name": "Listar eventos", "action": "list"},
         2: {"name": "Ver detalles de evento", "action": "details"},
         3: {"name": "Comprar entradas", "action": "buy"},
@@ -59,7 +59,7 @@ class EventManager:
                 return
             self._current_user = user
             print("\n--- Menú de Eventos ---")
-            event_options = self.event_admin_options if user.role == "admin" else self.event_viewer_options
+            event_options = self.event_admin_options if user.role == "admin" else self.event_user_options
             for key, value in event_options.items():
                 print(f"{key}. {value['name']}")
             choice = input("Seleccione una opción: ")
@@ -67,9 +67,9 @@ class EventManager:
                 print("Opción no válida.")
                 continue
             action = event_options[int(choice)]["action"]
-            self._event_select(action)
+            result = self._event_select(action)
             if action == "back":
-                return
+                break
 
     def _create_event(self):
         print("Crear evento")
