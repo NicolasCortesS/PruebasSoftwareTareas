@@ -1,38 +1,20 @@
 # PruebasSoftwareTareas
-## Requisitos
-- Python 3.12+
-- PostgreSQL 14+ en local
 
-# Instalar dependencias
-pip install -r requirements.txt
+Repositorio para la tarea de Pruebas de Software (2025-2).
 
-## Configurar base de datos
-La app usa `DATABASE_URL` (por defecto `postgresql://postgres:123@localhost:5432/tarea1`).
+Este repositorio contiene una pequeña aplicación CLI para gestionar micro-eventos (charlas, talleres, shows): crear eventos, vender/devolver entradas, y generar reportes simples. Además incluye tests unitarios e integraciones guardadas y documentación del entregable pedida en la tarea.
 
-```powershell
-$env:DATABASE_URL = "postgresql://postgres:123@localhost:5432/tarea1"
+Cómo correr (resumen):
 
-# crear DB si no existe
-psql "postgresql://postgres:123@localhost:5432/postgres" -c "CREATE DATABASE tarea1;"
+1. Crear y activar un entorno virtual Python 3.10+.
+2. Instalar dependencias: `pip install -r requirements.txt`.
+3. Preparar una base Postgres y exportar `DATABASE_URL` (por ejemplo: `postgresql://user:pass@127.0.0.1:5432/dbname`).
+4. (Opcional) Reiniciar esquema: `python3 scripts/reset_db.py`.
+5. Ejecutar la aplicación: `python3 main.py` desde la raíz.
+6. Ejecutar tests: `python -m pytest -q.
 
-# aplicar esquema
-psql "postgresql://postgres:123@localhost:5432/tarea1" -f schema.sql
-```
+Notas:
 
-## Crear usuario administrador
-```powershell
-python -c "from domain import create_user; print(create_user('admin','admin123','admin'))"
-```
-
-## Ejecutar interfaz de consola
-```powershell
-python interface\main.py
-```
-- Puedes registrarte como usuario/admin o iniciar sesión (admin/admin123 si se creó el admin arriba).
-- Menú de usuario permite gestionar eventos, ventas/devoluciones y ver reportes.
-
-## Ejecutar smoke tests
-```powershell
-python test.py
-```
+- Las pruebas de integración requieren un servidor Postgres accesible y el driver `psycopg[binary]`.
+- Para reproducir el entorno de integración utilice la opción `--reset-db` en pytest (ver `tests/conftest.py`).
 
