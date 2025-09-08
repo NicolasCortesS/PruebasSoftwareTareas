@@ -7,5 +7,6 @@ class ResponseLogin(BaseModel):
     userData: Optional['UserData'] = None
 
 class UserData(BaseModel):
+    id: int
     username: str
     role: str

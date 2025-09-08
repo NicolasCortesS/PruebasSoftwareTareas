@@ -105,6 +105,18 @@ def list_events(q: str = "", category: str = "", status: str = "", dt_from: date
         rows = cur.fetchall()
     return rows
 
+def get_event(event_id: int):
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, name, description, starts_at, category, price, seats_total, seats_sold
+            FROM events WHERE id=%s
+            """,
+            (event_id,)
+        )
+        row = cur.fetchone()
+    return row
+
 def report_summary() -> dict:
     with get_conn() as c, c.cursor() as cur:
         cur.execute("SELECT COUNT(*), COALESCE(SUM(seats_total - seats_sold),0) FROM events")

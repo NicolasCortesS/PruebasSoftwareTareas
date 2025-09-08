@@ -53,7 +53,5 @@ def main():
     ok("Eliminar evento pasado (E2) OK")
     expect_error(delete_event, e2)
 
-    ok("SMOKE TESTS COMPLETOS")
-
 if __name__ == "__main__":
     main()
