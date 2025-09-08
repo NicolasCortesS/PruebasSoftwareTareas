@@ -1,12 +1,14 @@
 from interface.entities import ResponseLogin
 from interface.auth import AUTH
 
+# ---------- Opciones ----------
 start_options = {
     1: {"name": "Iniciar sesión", "action": "login"},
     2: {"name": "Registrarse", "action": "register"},
     0: {"name": "Terminar aplicación", "action": "exit"}
 }
 
+# ---------- Lógica de selección ----------
 def start_select(option: str) -> ResponseLogin:
     match option:
         case 'login':
@@ -20,6 +22,7 @@ def start_select(option: str) -> ResponseLogin:
             print("Opción no válida")
             return ResponseLogin(success=False)
 
+# ---------- Entry point ----------
 def start() -> ResponseLogin:
     print("\n--- Menú de inicio ---")
     for key, value in start_options.items():

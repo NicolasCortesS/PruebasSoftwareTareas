@@ -8,6 +8,16 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:123@localhost:54
 
 @contextmanager
 def get_conn():
+    """
+    Context manager para obtener conexión a la base de datos.
+    
+    Yields:
+        psycopg.Connection: Conexión a la base de datos PostgreSQL.
+        
+    Note:
+        La conexión se cierra automáticamente al salir del contexto.
+        Las transacciones se confirman automáticamente si no hay errores.
+    """
     with psycopg.connect(DATABASE_URL, autocommit=False) as conn:
         try:
             yield conn
