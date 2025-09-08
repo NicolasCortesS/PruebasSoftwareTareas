@@ -1,24 +1,22 @@
-from entities import UserData, ResponseLogin
+from interface.entities import UserData, ResponseLogin
+import domain
 
-_USERS = {
-	"admin": {"password": "admin", "role": "admin"},
-	"user": {"password": "user", "role": "user"}
-}
 
-class Auth():
+class Auth:
     def login(self):
         print("\n--- Iniciar sesión ---")
         username = input("Usuario: ")
         password = input("Contraseña: ")
-        if username in _USERS: 
-            user = _USERS.get(username) 
-        else:
-            user = None
-
-        if user and user["password"] == password:
+        try:
+            res = domain.auth_user(username, password)
+        except Exception as e:
+            print(f"Error de autenticación: {e}")
+            return ResponseLogin(success=False)
+        if res:
+            uid, role = res
             print(f"Bienvenido, {username}!")
-            user = UserData(username=username, role=user["role"])
-            return ResponseLogin(success=True, userData=user)
+            ud = UserData(username=username, role=role, id=uid)
+            return ResponseLogin(success=True, userData=ud)
         else:
             print("Credenciales incorrectas.")
             return ResponseLogin(success=False)
@@ -27,9 +25,14 @@ class Auth():
         print("\n--- Registrarse ---")
         username = input("Elija un nombre de usuario: ")
         password = input("Elija una contraseña: ")
-        #Falta llamar realmente a la bd
-        print(f"Usuario {username} registrado exitosamente.")
-        user = UserData(username=username, role="user")
-        return ResponseLogin(success=True, userData=user)
+        try:
+            uid = domain.create_user(username=username, password=password, role='viewer')
+            print(f"Usuario {username} registrado exitosamente (id={uid}).")
+            ud = UserData(username=username, role='viewer', id=uid)
+            return ResponseLogin(success=True, userData=ud)
+        except Exception as e:
+            print(f"Error registrando usuario: {e}")
+            return ResponseLogin(success=False)
+
 
 AUTH = Auth()

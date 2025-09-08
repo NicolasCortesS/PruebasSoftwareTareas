@@ -9,3 +9,4 @@ class ResponseLogin(BaseModel):
 class UserData(BaseModel):
     username: str
     role: str
+    id: int

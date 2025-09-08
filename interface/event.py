@@ -1,9 +1,10 @@
-from validations import validate_non_empty, validate_price, validate_int, parse_local_datetime_to_utc, confirm_yes
+from interface.validations import validate_non_empty, validate_price, validate_int, parse_local_datetime_to_utc, confirm_yes
 from datetime import datetime, timezone
-from entities import UserData
+from interface.entities import UserData
+import domain
 
 class EventManager:
-    event_user_options = {
+    event_viewer_options = {
         1: {"name": "Listar eventos", "action": "list"},
         0: {"name": "Volver", "action": "back"}
     }
@@ -41,7 +42,7 @@ class EventManager:
                 print("Debe iniciar sesión para gestionar eventos.")
                 return
             print("\n--- Menú de Eventos ---")
-            event_options = self.event_admin_options if user.role == "admin" else self.event_user_options
+            event_options = self.event_admin_options if user.role == "admin" else self.event_viewer_options
             for key, value in event_options.items():
                 print(f"{key}. {value['name']}")
             choice = input("Seleccione una opción: ")
@@ -49,9 +50,9 @@ class EventManager:
                 print("Opción no válida.")
                 continue
             action = event_options[int(choice)]["action"]
-            result = self._event_select(action)
+            self._event_select(action)
             if action == "back":
-                break
+                return
 
     def _create_event(self):
         print("Crear evento")
@@ -74,21 +75,11 @@ class EventManager:
         if total_capacity is None:
             print("Cupos inválidos.")
             return
-
-        # Aca iría la logica de pasar datos al backend
-        event = {
-            "id": self._id_counter,
-            "name": name,
-            "description": description,
-            "start_utc": start_utc.isoformat(),
-            "category": category,
-            "price": price,
-            "total_capacity": total_capacity,
-            "available": total_capacity,
-        }
-        self._events.append(event)
-        self._id_counter += 1
-        print(f"Evento creado con ID: {event['id']}")
+        try:
+            eid = domain.create_event(name=name, description=description, starts_at=start_utc, category=category, price=int(price), seats_total=total_capacity)
+            print(f"Evento creado con ID: {eid}")
+        except Exception as e:
+            print(f"Error creando evento: {e}")
 
     def _apply_filters(self, events, keyword: str, category: str, date_from, date_to, state: str):
         now = datetime.now(timezone.utc)
@@ -116,7 +107,6 @@ class EventManager:
 
     def _list_events(self):
         print("Listar eventos")
-        # Acá se debería verificar si es que hay eventos
 
         keyword = (input("Filtro palabra clave (enter para omitir): ") or "").lower()
         category = (input("Filtro categoría (enter para omitir): ") or "").lower()
@@ -126,68 +116,126 @@ class EventManager:
         date_to = parse_local_datetime_to_utc(date_to) if date_to else None
         state = (
             input("Estado (proximos/pasados/agotados, enter para omitir): ") or "").lower()
-        results = self.apply_filters(self._events, keyword,
-                        category, date_from, date_to, state)
-        if not results:
+        status = ""
+        if state == "proximos":
+            status = "upcoming"
+        elif state == "pasados":
+            status = "past"
+        elif state == "agotados":
+            status = "soldout"
+
+        try:
+            rows = domain.list_events(q=keyword or "", category=category or "", status=status, dt_from=date_from, dt_to=date_to)
+        except Exception as e:
+            print(f"Error consultando eventos: {e}")
+            return
+
+        if not rows:
             print("No se encontraron eventos.")
             return
-        for event in results:
-            start_local = datetime.fromisoformat(event["start_utc"]).astimezone()
-            print(f"ID: {event['id']} | {event['name']} | {start_local.strftime('%d-%m-%Y %H:%M %Z')} | Cat: {event['category']} | Precio: {event['price']} | Disponibles: {event['available']}/{event['total_capacity']}")
+
+        for row in rows:
+            eid, name, description, starts_at, category, price, seats_total, seats_sold = row
+            available = seats_total - seats_sold
+            start_local = starts_at.astimezone()
+            print(f"ID: {eid} | {name} | {start_local.strftime('%d-%m-%Y %H:%M %Z')} | Cat: {category} | Precio: {price} | Disponibles: {available}/{seats_total}")
+            if description:
+                print(f"  Descripción: {description}")
 
 
     def _update_event(self):
         print("Actualizar evento")
-        # Acá se debería verificar si es que hay eventos
         try:
             event_id = int(input("ID del evento a actualizar: ").strip())
-            # logica de buscar evento y de verificar iria aca
-            event = next((e for e in self._events if e['id'] == event_id), None)
-            if not event:
+            try:
+                row = domain.get_event_by_id(event_id)
+            except Exception as e:
+                print(f"Error consultando eventos: {e}")
+                return
+            if not row:
                 print("Evento no encontrado.")
                 return
 
-            name = input(f"Nombre [{event['name']}]: ") or event['name']
-            description = input(
-                f"Descripción [{event['description']}]: ") or event['description']
-            date_str = input(
-                "Fecha y hora (DD-MM-YYYY o DD-MM-YYYY HH:MM) (enter para mantener): ") or ""
+            _, cur_name, cur_description, cur_starts_at, cur_category, cur_price, cur_seats_total, cur_seats_sold = row
+            cur_available = cur_seats_total - cur_seats_sold
+
+            summary = (
+                f"ID:{event_id} | Nombre:{cur_name} | Descripción:{cur_description} | "
+                f"Fecha:{cur_starts_at.astimezone().strftime('%d-%m-%Y %H:%M %Z')} | Cat:{cur_category} | "
+                f"Precio:{cur_price} | Total:{cur_seats_total} | Vendidos:{cur_seats_sold} | Disponibles:{cur_available}"
+            )
+            print("\nEvento actual: " + summary + "\n")
+
+            name = input(f"Nombre (enter para mantener) [{cur_name}]: ").strip()
+            description = input(f"Descripción (enter para mantener) [{cur_description}]: ").strip()
+            date_str = input(f"Fecha y hora (DD-MM-YYYY o DD-MM-YYYY HH:MM) (enter para mantener) [{cur_starts_at.astimezone().strftime('%d-%m-%Y %H:%M')}]: ").strip()
+            category = input(f"Categoría (enter para mantener) [{cur_category}]: ").strip()
+            price = input(f"Precio (enter para mantener) [{cur_price}]: ").strip()
+            cap = input(f"Cupos totales (enter para mantener) [{cur_seats_total}]: ").strip()
+
+            fields = {}
+            if name:
+                fields['name'] = name
+            if description:
+                fields['description'] = description
             if date_str:
                 start_utc = parse_local_datetime_to_utc(date_str)
-                if start_utc:
-                    event['start_utc'] = start_utc.isoformat()
-            category = input(f"Categoría [{event['category']}]: ") or event['category']
-            price = input(f"Precio [{event['price']}]: ") or str(event['price'])
-            price_v = validate_price(price)
-            if price_v is not None:
-                event['price'] = price_v
-            cap = input(f"Cupos totales [{event['total_capacity']}]: ") or str(
-                event['total_capacity'])
-            cap_v = validate_int(cap)
-            if cap_v is not None:
-                delta = cap_v - event['total_capacity']
-                event['total_capacity'] = cap_v
-                event['available'] = max(0, event['available'] + delta)
-            print("Evento actualizado.")
+                if not start_utc:
+                    print("Fecha inválida.")
+                    return
+                fields['starts_at'] = start_utc
+            if category:
+                fields['category'] = category
+            if price:
+                pv = validate_price(price)
+                if pv is None:
+                    print("Precio inválido.")
+                    return
+                fields['price'] = int(pv)
+            if cap:
+                cv = validate_int(cap)
+                if cv is None:
+                    print("Cupos inválidos.")
+                    return
+                fields['seats_total'] = cv
+
+            if not fields:
+                print("No hay cambios.")
+                return
+
+            try:
+                domain.update_event(event_id, **fields)
+                print("Evento actualizado.")
+            except Exception as e:
+                print(f"Error actualizando evento: {e}")
         except Exception as e:
             print(f"Error actualizando evento: {e}")
 
 
     def _delete_event(self):
         print("Eliminar evento")
-        ##logica de eliminar evento
         try:
             event_id = int(input("ID del evento a eliminar: ").strip())
-            ### logic ade eliminar y verificar iria aca
-            event = next((e for e in self._events if e['id'] == event_id), None)
-            if not event:
+            try:
+                row = domain.get_event_by_id(event_id)
+            except Exception as e:
+                print(f"Error consultando eventos: {e}")
+                return
+            if not row:
                 print("Evento no encontrado.")
                 return
-            print(
-                f"Evento: {event['id']} - {event['name']} (Disponibles: {event['available']}/{event['total_capacity']})")
+            eid, name, description, starts_at, category, price, seats_total, seats_sold = row
+            available = seats_total - seats_sold
+            start_local = starts_at.astimezone()
+            print(f"Evento: {eid} - {name} | {start_local.strftime('%d-%m-%Y %H:%M %Z')} | Disponibles: {available}/{seats_total}")
+            if description:
+                print(f"  Descripción: {description}")
             if confirm_yes(input("¿Confirma eliminación? (s/N): ")):
-                self._events.remove(event)
-                print("Evento eliminado.")
+                try:
+                    domain.delete_event(event_id)
+                    print("Evento eliminado.")
+                except Exception as e:
+                    print(f"Error eliminando evento: {e}")
             else:
                 print("Eliminación cancelada.")
         except Exception as e:
