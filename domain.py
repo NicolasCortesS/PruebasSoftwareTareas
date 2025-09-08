@@ -99,11 +99,21 @@ def list_events(q: str = "", category: str = "", status: str = "", dt_from: date
         clauses += ["starts_at < NOW()"]
 
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
-    sql = f"SELECT id,name,starts_at,category,price,seats_total,seats_sold FROM events{where} ORDER BY starts_at"
+    sql = f"SELECT id,name,description,starts_at,category,price,seats_total,seats_sold FROM events{where} ORDER BY starts_at"
     with get_conn() as c, c.cursor() as cur:
         cur.execute(sql, params)
         rows = cur.fetchall()
     return rows
+
+
+def get_event_by_id(event_id: int) -> Optional[tuple]:
+    with get_conn() as c, c.cursor() as cur:
+        cur.execute(
+            "SELECT id,name,description,starts_at,category,price,seats_total,seats_sold FROM events WHERE id=%s",
+            (event_id,)
+        )
+        row = cur.fetchone()
+    return row
 
 def report_summary() -> dict:
     with get_conn() as c, c.cursor() as cur:
