@@ -15,7 +15,7 @@ class Auth:
         if res:
             uid, role = res
             print(f"Bienvenido, {username}!")
-            ud = UserData(username=username, role=role)
+            ud = UserData(username=username, role=role, id=uid)
             return ResponseLogin(success=True, userData=ud)
         else:
             print("Credenciales incorrectas.")
@@ -28,7 +28,7 @@ class Auth:
         try:
             uid = domain.create_user(username=username, password=password, role='viewer')
             print(f"Usuario {username} registrado exitosamente (id={uid}).")
-            ud = UserData(username=username, role='viewer')
+            ud = UserData(username=username, role='viewer', id=uid)
             return ResponseLogin(success=True, userData=ud)
         except Exception as e:
             print(f"Error registrando usuario: {e}")

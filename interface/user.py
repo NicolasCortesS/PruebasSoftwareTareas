@@ -1,21 +1,21 @@
 from interface.entities import UserData, ResponseLogin
 from interface.event import EVENT_MANAGER
+from interface.sales import SALES_AND_REFUNDS_MANAGER
+from interface.reports import REPORTS_MANAGER
 
 
 class UserManager:
     viewer_options = {
         1: {"name": "Gestionar eventos", "action": "manage_events"},
         2: {"name": "Generar reportes", "action": "generate_reports"},
-        3: {"name": "Cerrar sesión", "action": "logout"},
-        4: {"name": "Salir", "action": "exit"}
+        0: {"name": "Cerrar sesión", "action": "logout"},
     }
 
     admin_options = {
         1: {"name": "Gestionar eventos", "action": "manage_events"},
         2: {"name": "Gestionar ventas y devoluciones", "action": "manage_sales"},
         3: {"name": "Generar reportes", "action": "generate_reports"},
-        4: {"name": "Cerrar sesión", "action": "logout"},
-        5: {"name": "Salir", "action": "exit"}
+        0: {"name": "Cerrar sesión", "action": "logout"},
     }
 
     _userData: UserData = None
@@ -34,9 +34,9 @@ class UserManager:
             case 'manage_events':
                 EVENT_MANAGER.event_menu(self.get_user())
             case 'manage_sales':
-                print("Gestionando ventas y devoluciones...")
+                SALES_AND_REFUNDS_MANAGER.manage_sales_and_refunds_menu(self.get_user())
             case 'generate_reports':
-                print("Generando reportes...")
+                REPORTS_MANAGER.reports_menu(self.get_user())
             case 'manage_users':
                 print("Gestionando usuarios...")
             case 'logout':
@@ -53,9 +53,9 @@ class UserManager:
             case 'manage_events':
                 EVENT_MANAGER.event_menu(self.get_user())
             case 'manage_sales':
-                print("Gestionando ventas y devoluciones...")
+                SALES_AND_REFUNDS_MANAGER.manage_sales_and_refunds_menu(self.get_user())
             case 'generate_reports':
-                print("Generando reportes...")
+                REPORTS_MANAGER.reports_menu(self.get_user())
             case 'manage_users':
                 print("Gestionando usuarios...")
             case 'logout':

@@ -1,7 +1,10 @@
 import bcrypt
+import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 from db import get_conn
+
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 # ---------- Usuarios ----------
 def create_user(username: str, password: str, role: str = "admin") -> int:
@@ -16,7 +19,9 @@ def create_user(username: str, password: str, role: str = "admin") -> int:
             "INSERT INTO users(username,password_hash,role) VALUES(%s,%s,%s) RETURNING id",
             (username, pwd, role),
         )
-        return cur.fetchone()[0]
+        uid = cur.fetchone()[0]
+    logging.info(f"create_user username={username} id={uid} role={role}")
+    return uid
 
 def auth_user(username: str, password: str) -> Optional[Tuple[int,str]]:
     with get_conn() as c, c.cursor() as cur:
@@ -25,7 +30,9 @@ def auth_user(username: str, password: str) -> Optional[Tuple[int,str]]:
         if not row: return None
         uid, ph, role = row
         if bcrypt.checkpw(password.encode(), ph.encode()):
+            logging.info(f"auth_user success username={username} id={uid}")
             return uid, role
+        logging.info(f"auth_user failed username={username}")
         return None
 
 # ---------- Eventos ----------
@@ -38,7 +45,11 @@ def create_event(name: str, description: str, starts_at: datetime, category: str
                VALUES(%s,%s,%s,%s,%s,%s,0) RETURNING id""",
             (name.strip(), description.strip(), starts_at, category, price, seats_total),
         )
-        return cur.fetchone()[0]
+        eid = cur.fetchone()[0]
+    logging.info(
+        f"create_event id={eid} name={name!r} starts_at={starts_at.isoformat()} category={category!r} price={price} seats_total={seats_total}"
+    )
+    return eid
 
 def update_event(event_id: int, **fields) -> None:
     if "seats_total" in fields:
@@ -52,37 +63,47 @@ def update_event(event_id: int, **fields) -> None:
     vals = list(fields.values()) + [event_id]
     with get_conn() as c, c.cursor() as cur:
         cur.execute(f"UPDATE events SET {sets}, updated_at=now() WHERE id=%s", vals)
+    logging.info(f"update_event id={event_id} updated_fields={fields}")
 
 def delete_event(event_id: int) -> None:
     with get_conn() as c, c.cursor() as cur:
         cur.execute("DELETE FROM events WHERE id=%s", (event_id,))
-        if cur.rowcount == 0: raise ValueError("Evento no existe")
+        deleted = cur.rowcount
+        if deleted == 0:
+            raise ValueError("Evento no existe")
+    logging.info(f"delete_event id={event_id} rows_deleted={deleted}")
 
 # ---------- Ventas/Devoluciones ----------
 def sell(event_id: int, qty: int, user_id: int) -> None:
     if qty <= 0: raise ValueError("Cantidad debe ser > 0")
     with get_conn() as c, c.cursor() as cur:
-        cur.execute("SELECT seats_total, seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
+        cur.execute("SELECT name, seats_total, seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
         row = cur.fetchone()
         if not row: raise ValueError("Evento no existe")
-        total, sold = row
+        name, total, sold = row
         available = total - sold
         if available < qty: raise ValueError("No hay cupos suficientes")
         cur.execute("UPDATE events SET seats_sold = seats_sold + %s, updated_at=now() WHERE id=%s", (qty, event_id))
         cur.execute("INSERT INTO movements(event_id,type,qty,user_id) VALUES(%s,'SALE',%s,%s)",
                     (event_id, qty, user_id))
+    logging.info(
+        f"sell event_id={event_id} event_name={name!r} qty={qty} user_id={user_id} available_before={available}"
+    )
 
 def refund(event_id: int, qty: int, user_id: int) -> None:
     if qty <= 0: raise ValueError("Cantidad debe ser > 0")
     with get_conn() as c, c.cursor() as cur:
-        cur.execute("SELECT seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
+        cur.execute("SELECT name, seats_sold FROM events WHERE id=%s FOR UPDATE", (event_id,))
         row = cur.fetchone()
         if not row: raise ValueError("Evento no existe")
-        sold = row[0]
+        name, sold = row
         if sold - qty < 0: raise ValueError("No se puede devolver más de lo vendido")
         cur.execute("UPDATE events SET seats_sold = seats_sold - %s, updated_at=now() WHERE id=%s", (qty, event_id))
         cur.execute("INSERT INTO movements(event_id,type,qty,user_id) VALUES(%s,'REFUND',%s,%s)",
                     (event_id, qty, user_id))
+    logging.info(
+        f"refund event_id={event_id} event_name={name!r} qty={qty} user_id={user_id} sold_before={sold}"
+    )
 
 # ---------- Consulta y reporte ----------
 def list_events(q: str = "", category: str = "", status: str = "", dt_from: datetime = None, dt_to: datetime = None) -> List[tuple]:
