@@ -17,18 +17,18 @@ class UserManager:
     user_options = {
         1: {"name": "Gestionar eventos", "action": "manage_events"},
         2: {"name": "Generar reportes", "action": "generate_reports"},
-        3: {"name": "Cerrar sesión", "action": "logout"},
-        4: {"name": "Salir", "action": "exit"}
+        0: {"name": "Cerrar sesión", "action": "logout"},
     }
 
     admin_options = {
         1: {"name": "Gestionar eventos", "action": "manage_events"},
         2: {"name": "Gestionar ventas y devoluciones", "action": "manage_sales"},
         3: {"name": "Generar reportes", "action": "generate_reports"},
+        0: {"name": "Cerrar sesión", "action": "logout"},
     }
 
     _userData: UserData = None
-    
+
     def __init__(self):
         pass
 

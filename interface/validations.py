@@ -24,30 +24,21 @@ def validate_int(value: str) -> Optional[int]:
 
 
 def parse_local_datetime_to_utc(value: str) -> Optional[datetime]:
-    """Parse a local datetime string into UTC-aware datetime.
-
-    Accepts ISO or 'YYYY-MM-DD HH:MM'. Returns UTC datetime or None on error.
-    """
     if not value:
         return None
-    # Try ISO first
     try:
         dt = datetime.fromisoformat(value)
     except Exception:
-        # Try YYYY-MM-DD HH:MM
         try:
             dt = datetime.strptime(value, "%Y-%m-%d %H:%M")
         except Exception:
-            # Try DD-MM-YYYY HH:MM
             try:
                 dt = datetime.strptime(value, "%d-%m-%Y %H:%M")
             except Exception:
-                # Try DD-MM-YYYY (date only)
                 try:
                     dt = datetime.strptime(value, "%d-%m-%Y")
                 except Exception:
                     return None
-    # if naive, assume local timezone
     if dt.tzinfo is None:
         dt = dt.astimezone()
     return dt.astimezone(timezone.utc)

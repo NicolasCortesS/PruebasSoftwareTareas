@@ -1,5 +1,4 @@
 # PruebasSoftwareTareas
-
 ## Requisitos
 - Python 3.12+
 - PostgreSQL 14+ en local
@@ -37,7 +36,3 @@ python interface\main.py
 python test.py
 ```
 
-## Notas
-- Categorías permitidas: Charla, Taller, Show, Otro.
-- Precios: enteros (CLP).
-- Zona horaria: se interpreta local y se guarda en UTC.
