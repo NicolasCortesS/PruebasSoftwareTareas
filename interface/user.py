@@ -1,10 +1,18 @@
-from entities import UserData, ResponseLogin
-from event import EVENT_MANAGER
+try:
+    from .entities import UserData, ResponseLogin
+    from .event import EVENT_MANAGER
+except ImportError:
+    from entities import UserData, ResponseLogin
+    from event import EVENT_MANAGER
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from domain import sell as d_sell, refund as d_refund, report_summary as d_report
 
 class UserManager:
+    """
+    Gestor principal de usuarios del sistema.
+    Maneja menús, navegación y operaciones de usuario.
+    """
     # ---------- Menús ----------
     user_options = {
         1: {"name": "Gestionar eventos", "action": "manage_events"},
@@ -25,9 +33,21 @@ class UserManager:
         pass
 
     def get_user(self):
+        """
+        Obtiene el usuario actual de la sesión.
+        
+        Returns:
+            UserData: Datos del usuario actual o None si no hay sesión.
+        """
         return self._userData
 
     def set_user(self, user: UserData):
+        """
+        Establece el usuario actual de la sesión.
+        
+        Args:
+            user (UserData): Datos del usuario a establecer.
+        """
         self._userData = user
 
     def _user_select(self, option: str):
@@ -69,6 +89,9 @@ class UserManager:
                 print("Opción no válida")
 
     def user_menu(self):
+        """
+        Muestra el menú principal del usuario y maneja la navegación.
+        """
         while True:
             print("\n--- Menú de usuario ---")
             user = self.get_user()

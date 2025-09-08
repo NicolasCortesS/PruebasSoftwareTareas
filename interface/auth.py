@@ -4,10 +4,19 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from entities import UserData, ResponseLogin
 from domain import auth_user, create_user
 
-
 # ---------- Auth ----------
 class Auth():
+    """
+    Clase para manejar la autenticación de usuarios.
+    Proporciona métodos para login y registro.
+    """
     def login(self):
+        """
+        Procesa el login de un usuario.
+        
+        Returns:
+            ResponseLogin: Respuesta con el resultado del login.
+        """
         print("\n--- Iniciar sesión ---")
         username = input("Usuario: ")
         password = input("Contraseña: ")
@@ -23,6 +32,12 @@ class Auth():
         return ResponseLogin(success=True, userData=user)
 
     def register(self):
+        """
+        Procesa el registro de un nuevo usuario.
+        
+        Returns:
+            ResponseLogin: Respuesta con el resultado del registro.
+        """
         print("\n--- Registrarse ---")
         username = input("Elija un nombre de usuario: ")
         password = input("Elija una contraseña: ")

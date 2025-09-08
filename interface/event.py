@@ -1,6 +1,10 @@
-from validations import validate_non_empty, validate_price, validate_int, parse_local_datetime_to_utc, confirm_yes
+try:
+    from .validations import validate_non_empty, validate_price, validate_int, parse_local_datetime_to_utc, confirm_yes
+    from .entities import UserData
+except ImportError:
+    from validations import validate_non_empty, validate_price, validate_int, parse_local_datetime_to_utc, confirm_yes
+    from entities import UserData
 from datetime import datetime, timezone
-from entities import UserData
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from domain import create_event as d_create_event, list_events as d_list_events, update_event as d_update_event, delete_event as d_delete_event, get_event as d_get_event

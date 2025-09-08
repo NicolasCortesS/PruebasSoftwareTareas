@@ -1,1 +1,8 @@
 .venv
+__pycache__/domain.cpython-313.pyc
+__pycache__/db.cpython-313.pyc
+/__pycache__
+/__pycache__
+/logs
+*.pyc
+*.pyc
